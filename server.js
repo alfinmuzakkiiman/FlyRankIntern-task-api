@@ -2,6 +2,8 @@ import express from "express";
 
 const app = express();
 
+app.use(express.json());
+
 const PORT = 3000;
 
 const tasks = [
@@ -52,6 +54,28 @@ app.get("/tasks/:id", (req, res) => {
   }
 
   res.json(task);
+});
+
+app.post("/tasks", (req, res) => {
+    const { title } = req.body;
+
+    if(!title || title.trim() === "") {
+        return res.status(400).json({
+            error: "Title is required",
+        });
+    }
+
+    const nextId = Math.max(...tasks.map((task) => task.id)) + 1;
+
+    const newTask = {
+        id: nextId,
+        title: title.trim(),
+        done: false,
+    };
+
+    tasks.push(newTask);
+
+    res.status(201).json(newTask);
 });
 
 app.listen(PORT, () => {
