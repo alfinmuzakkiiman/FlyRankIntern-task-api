@@ -1,6 +1,14 @@
 import express from "express";
+import swaggerUi from "swagger-ui-express";
+import fs from "fs";
 
 const app = express();
+
+const openapiDocument = JSON.parse(
+  fs.readFileSync("./openapi.json", "utf-8")
+);
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapiDocument));
 
 app.use(express.json());
 
