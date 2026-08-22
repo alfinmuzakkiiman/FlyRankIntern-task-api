@@ -512,3 +512,100 @@ Pull Request
   ↓
 Merge
 ```
+
+---
+
+## AI vs Me (Stage 7 — The AI Rematch)
+
+### Full Prompt Used
+
+```text
+Build a REST API for managing tasks using Node.js and Express.js.
+
+The API should use an in-memory array as its data storage. Do not use a database or file-based storage.
+
+Use port 3000 and JSON request/response bodies.
+
+The API must provide these endpoints:
+
+1. GET /
+   - Return basic information about the API.
+   - Return HTTP 200.
+
+2. GET /health
+   - Return a simple health status.
+   - Return HTTP 200.
+
+3. GET /tasks
+   - Return all tasks.
+   - Return HTTP 200.
+
+4. GET /tasks/:id
+   - Return one task by its numeric ID.
+   - If the task does not exist, return HTTP 404 with a JSON error message.
+
+5. POST /tasks
+   - Create a new task.
+   - The request body must contain a non-empty string called "title".
+   - Trim whitespace from the title.
+   - Automatically generate the task ID.
+   - New tasks must have "done": false by default.
+   - Return the created task with HTTP 201.
+   - If the title is missing or empty, return HTTP 400 with a JSON error message.
+
+6. PUT /tasks/:id
+   - Update an existing task.
+   - The request can update "title", "done", or both.
+   - "title" must be a non-empty string when provided.
+   - "done" must be a boolean when provided.
+   - The request body must contain at least one valid field to update.
+   - Return the updated task with HTTP 200.
+   - If the task ID does not exist, return HTTP 404 with a JSON error message.
+   - If the request body is empty or invalid, return HTTP 400 with a JSON error message.
+
+7. DELETE /tasks/:id
+   - Delete the task with the specified ID.
+   - Return HTTP 204 with an empty response body when successful.
+   - If the task does not exist, return HTTP 404 with a JSON error message.
+
+The API should use Express JSON middleware.
+
+Add Swagger UI documentation using swagger-ui-express.
+
+Create an OpenAPI specification describing all API endpoints, request bodies, responses, task schema, and relevant HTTP status codes.
+
+Serve Swagger UI at:
+
+http://localhost:3000/docs
+
+The Swagger UI should allow users to use "Try it out" for the complete CRUD flow.
+
+The project should include:
+- server.js
+- openapi.json
+- package.json
+- README.md
+
+Keep the implementation simple and beginner-friendly. Do not add authentication, a database, Docker, TypeScript, or unnecessary dependencies.
+
+After generating the code, explain the project structure and how to install and run the API.
+```
+
+### Analysis & Differences
+
+#### 1. What did the AI do better?
+* **Clean & Compact Code Structure:** The AI formatted input validation compactly (e.g., checking `typeof title !== 'string' || title.trim() === ''` in a single guard clause).
+* **Explicit HTTP Status Code calls:** The AI explicitly chained `.status(200)` across all read endpoints (e.g. `res.status(200).json(tasks)`), making status codes completely unambiguous in every response handler.
+
+#### 2. What did it get wrong or quietly ignore?
+* **Error Response Format:** The hand-built version returns `{ "error": "..." }` while the AI version returned `{ "message": "..." }` because the exact JSON property key for errors was not strictly defined in the prompt.
+* **Express Framework Version:** The AI selected Express 4.x (`^4.18.2`) in `package.json`, whereas our hand-built project uses Express 5.x (`^5.2.1`).
+
+#### 3. What did your prompt forget to specify — and what did the AI silently decide?
+* **Error Payload Key Name:** The prompt stated "return HTTP 400 with a JSON error message", so the AI decided on `{ "message": "..." }` instead of `{ "error": "..." }`.
+* **Seed Data Content:** The prompt did not specify initial array data, so the AI silently generated its own sample task items (`Learn Node.js`, `Build Express API`).
+
+### Rematch & Prompt Improvement
+
+* **Prompt Improvement Note:** Specifying `Error responses must follow the format {"error": "<message>"}` and explicitly stating `Use Express 5.x` closed all minor gaps between the AI-generated code and our hand-built API.
+
