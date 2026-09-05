@@ -1,8 +1,44 @@
 import express from "express";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
+import Database from "better-sqlite3";
 
 const app = express();
+const PORT = 3000;
+
+// ====================
+// Database
+// ====================
+
+const db = new Database("tasks.db");
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    done INTEGER NOT NULL DEFAULT 0
+  )
+`);
+
+// Seed example tasks only if the table is empty
+const taskCount = db
+  .prepare("SELECT COUNT(*) AS count FROM tasks")
+  .get();
+
+if (taskCount.count === 0) {
+  const insertTask = db.prepare(`
+    INSERT INTO tasks (title, done)
+    VALUES (?, ?)
+  `);
+
+  insertTask.run("Learn Express", 0);
+  insertTask.run("Build Task API", 0);
+  insertTask.run("Test API endpoints", 1);
+}
+
+// ====================
+// OpenAPI / Swagger
+// ====================
 
 const openapiDocument = JSON.parse(
   fs.readFileSync("./openapi.json", "utf-8")
@@ -10,9 +46,16 @@ const openapiDocument = JSON.parse(
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapiDocument));
 
+// ====================
+// Middleware
+// ====================
+
 app.use(express.json());
 
-const PORT = 3000;
+// ====================
+// Temporary in-memory data
+// Will be replaced by SQLite in Stage 1-3
+// ====================
 
 const tasks = [
   {
@@ -31,6 +74,10 @@ const tasks = [
     done: true,
   },
 ];
+
+// ====================
+// Routes
+// ====================
 
 app.get("/", (req, res) => {
   res.json({
@@ -65,25 +112,25 @@ app.get("/tasks/:id", (req, res) => {
 });
 
 app.post("/tasks", (req, res) => {
-    const { title } = req.body;
+  const { title } = req.body;
 
-    if(!title || title.trim() === "") {
-        return res.status(400).json({
-            error: "Title is required",
-        });
-    }
+  if (!title || title.trim() === "") {
+    return res.status(400).json({
+      error: "Title is required",
+    });
+  }
 
-    const nextId = Math.max(...tasks.map((task) => task.id)) + 1;
+  const nextId = Math.max(...tasks.map((task) => task.id)) + 1;
 
-    const newTask = {
-        id: nextId,
-        title: title.trim(),
-        done: false,
-    };
+  const newTask = {
+    id: nextId,
+    title: title.trim(),
+    done: false,
+  };
 
-    tasks.push(newTask);
+  tasks.push(newTask);
 
-    res.status(201).json(newTask);
+  res.status(201).json(newTask);
 });
 
 app.put("/tasks/:id", (req, res) => {
@@ -99,10 +146,7 @@ app.put("/tasks/:id", (req, res) => {
 
   const { title, done } = req.body;
 
-  if (
-    (title === undefined || title === "") &&
-    done === undefined
-  ) {
+  if ((title === undefined || title === "") && done === undefined) {
     return res.status(400).json({
       error: "Title or done is required",
     });
@@ -146,6 +190,10 @@ app.delete("/tasks/:id", (req, res) => {
 
   res.status(204).send();
 });
+
+// ====================
+// Start server
+// ====================
 
 app.listen(PORT, () => {
   console.log(`Task API running on http://localhost:${PORT}`);
