@@ -107,7 +107,7 @@ app.get("/tasks/:id", (req, res) => {
 });
 
 
-app.post("/tasks", (req, res) => {
+app.post("/tasks",(req, res) => {
   const { title } = req.body;
 
   if (!title || title.trim() === "") {
@@ -116,17 +116,21 @@ app.post("/tasks", (req, res) => {
     });
   }
 
-  const nextId = Math.max(...tasks.map((task) => task.id)) + 1;
+  const result = db 
+  .prepare(`
+    INSERT INTO tasks (title, done )
+    values (?, ?)
+    `)
+    .run(title.trim(), 0);
 
-  const newTask = {
-    id: nextId,
-    title: title.trim(),
-    done: false,
-  };
+    const newTask = db 
+    .prepare("SELECT * FROM tasks WHERE id = ?")
+    .get(result.lastInsertRowid);
 
-  tasks.push(newTask);
-
-  res.status(201).json(newTask);
+    res.status(201).json({
+      ...newTask,
+      done: Boolean(newTask.done),
+    });
 });
 
 app.put("/tasks/:id", (req, res) => {
