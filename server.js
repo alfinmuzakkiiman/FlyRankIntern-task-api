@@ -57,23 +57,6 @@ app.use(express.json());
 // Will be replaced by SQLite in Stage 1-3
 // ====================
 
-const tasks = [
-  {
-    id: 1,
-    title: "Learn Express",
-    done: false,
-  },
-  {
-    id: 2,
-    title: "Build Task API",
-    done: false,
-  },
-  {
-    id: 3,
-    title: "Test API endpoints",
-    done: true,
-  },
-];
 
 // ====================
 // Routes
@@ -94,13 +77,22 @@ app.get("/health", (req, res) => {
 });
 
 app.get("/tasks", (req, res) => {
-  res.json(tasks);
+  const tasks = db.prepare("SELECT * FROM tasks").all();
+
+  res.json(
+    tasks.map((task) => ({
+      ...task,
+      done: Boolean(task.done),
+    }))
+  );
 });
 
 app.get("/tasks/:id", (req, res) => {
   const id = Number(req.params.id);
 
-  const task = tasks.find((task) => task.id === id);
+  const task = db 
+  .prepare("SELECT * FROM tasks WHERE id = ?")
+  .get(id);
 
   if (!task) {
     return res.status(404).json({
@@ -108,8 +100,12 @@ app.get("/tasks/:id", (req, res) => {
     });
   }
 
-  res.json(task);
+  res.json({
+    ...task,
+    done: Boolean(task.done),
+  });
 });
+
 
 app.post("/tasks", (req, res) => {
   const { title } = req.body;
