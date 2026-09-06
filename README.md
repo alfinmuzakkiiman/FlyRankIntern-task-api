@@ -1,16 +1,25 @@
 # Task API
 
-A simple REST API for managing tasks, built with Node.js and Express.js.
+A simple REST API for managing tasks, built with Node.js, Express.js, and SQLite.
 
-This project was developed as part of my internship at **FlyRank AI** during **Week 2**. The project focuses on learning and implementing fundamental backend development concepts, including REST API design, CRUD operations, request validation, HTTP status codes, Git/GitHub workflow, and API documentation using Swagger UI.
+This project was developed as part of my internship at **FlyRank AI** across **Week 2 and Week 3**. In Week 2, I built the CRUD API using an in-memory array. In Week 3, I replaced the in-memory storage with a real SQLite database while keeping the API endpoints and behavior consistent.
+
+The project focuses on learning and implementing practical backend development concepts, including REST API design, CRUD operations, request validation, HTTP status codes, database persistence, SQL, Swagger/OpenAPI documentation, and a Git/GitHub Pull Request workflow.
+
+---
 
 ## Tech Stack
 
 * Node.js
 * Express.js
+* SQLite
+* better-sqlite3
 * Swagger UI
 * OpenAPI
+* DBeaver
 * Git & GitHub
+
+---
 
 ## Features
 
@@ -21,19 +30,25 @@ This project was developed as part of my internship at **FlyRank AI** during **W
 * Delete a task
 * Request validation
 * HTTP status code handling
+* Persistent task storage with SQLite
+* Automatic database creation
+* Automatic table creation
+* Initial seed data only when the table is empty
 * Interactive API documentation with Swagger UI
+* SQL database exploration using DBeaver
 
 ---
 
-## Getting Started
+# Getting Started
 
-### Requirements
+## Requirements
 
 Make sure you have installed:
 
 * Node.js
 * npm
 * Git
+* DBeaver (optional, for viewing and exploring the SQLite database)
 
 Check your installation:
 
@@ -43,7 +58,9 @@ npm --version
 git --version
 ```
 
-### Installation
+---
+
+## Installation
 
 Clone the repository:
 
@@ -63,7 +80,11 @@ Install the project dependencies:
 npm install
 ```
 
-### Run the Server
+The project uses `better-sqlite3` to communicate with SQLite.
+
+---
+
+## Run the Server
 
 Start the API:
 
@@ -83,7 +104,35 @@ You should see:
 Task API running on http://localhost:3000
 ```
 
-### Verify the API
+---
+
+## Database Initialization
+
+The SQLite database is stored locally in:
+
+```text
+tasks.db
+```
+
+The application automatically creates the database file when the server starts if it does not already exist.
+
+The `tasks` table is also created automatically if it does not exist.
+
+The application checks whether the table is empty. If it is empty, three example tasks are inserted:
+
+```text
+Learn Express
+Build Task API
+Test API endpoints
+```
+
+The seed data is inserted only when the table contains zero rows.
+
+This means restarting the server does **not** recreate the example tasks when data already exists.
+
+---
+
+## Verify the API
 
 Check the health endpoint:
 
@@ -106,7 +155,7 @@ Content-Type: application/json; charset=utf-8
 
 ---
 
-## API Documentation
+# API Documentation
 
 Interactive API documentation is available through Swagger UI:
 
@@ -116,27 +165,47 @@ http://localhost:3000/docs
 
 Swagger UI allows you to explore and test the API directly from your browser using the **Try it out** feature.
 
-### Swagger UI Preview
+## Swagger UI Preview
 
 ![Swagger UI](docs/swagger-ui.png)
 
 ---
 
-## API Endpoints
+# Database Viewer
 
-| Method | Endpoint     | Description         |
-| ------ | ------------ | ------------------- |
-| GET    | `/`          | Get API information |
-| GET    | `/health`    | Check API health    |
-| GET    | `/tasks`     | Get all tasks       |
-| GET    | `/tasks/:id` | Get a task by ID    |
-| POST   | `/tasks`     | Create a new task   |
-| PUT    | `/tasks/:id` | Update a task       |
-| DELETE | `/tasks/:id` | Delete a task       |
+The SQLite database can be opened and inspected using DBeaver.
+
+The database contains a `tasks` table with the following columns:
+
+| Column | SQLite Type | Description |
+| --- | --- | --- |
+| `id` | INTEGER | Primary key and unique task ID |
+| `title` | TEXT | Task title |
+| `done` | INTEGER | Completion status (`0` = false, `1` = true) |
+
+## Database Viewer Preview
+
+![Database Viewer](docs/database-viewer.png)
+
+The screenshot above shows the SQLite database and the `tasks` table in DBeaver.
 
 ---
 
-## Task Object
+# API Endpoints
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| GET | `/` | Get API information |
+| GET | `/health` | Check API health |
+| GET | `/tasks` | Get all tasks |
+| GET | `/tasks/:id` | Get a task by ID |
+| POST | `/tasks` | Create a new task |
+| PUT | `/tasks/:id` | Update a task |
+| DELETE | `/tasks/:id` | Delete a task |
+
+---
+
+# Task Object
 
 A task has the following structure:
 
@@ -148,51 +217,71 @@ A task has the following structure:
 }
 ```
 
-| Field   | Type    | Description            |
-| ------- | ------- | ---------------------- |
-| `id`    | number  | Unique task ID         |
-| `title` | string  | Task title             |
-| `done`  | boolean | Task completion status |
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | number | Unique task ID |
+| `title` | string | Task title |
+| `done` | boolean | Task completion status |
+
+Although SQLite stores `done` as an integer (`0` or `1`), the API converts the value back to a JavaScript boolean (`false` or `true`) in its JSON responses.
 
 ---
 
-## CRUD Flow
+# CRUD Flow
 
 The API supports the complete CRUD lifecycle:
 
 ```text
 POST /tasks
     ↓
-Create a task
+Create a task in SQLite
     ↓
 GET /tasks
     ↓
-Get all tasks
+Read all tasks from SQLite
     ↓
 GET /tasks/:id
     ↓
-Get one task
+Read one task from SQLite
     ↓
 PUT /tasks/:id
     ↓
-Update the task
+Update the task in SQLite
     ↓
 DELETE /tasks/:id
     ↓
-Delete the task
+Delete the task from SQLite
 ```
 
-After deleting a task, requesting the same ID returns:
+The important change from Week 2 to Week 3 is the storage layer:
 
 ```text
-404 Not Found
+Week 2
+
+Client
+  ↓
+Express API
+  ↓
+In-memory Array
 ```
+
+```text
+Week 3
+
+Client
+  ↓
+Express API
+  ↓
+SQLite Database
+```
+
+The client does not need to know that the storage implementation changed.
 
 ---
 
-## Example API Requests
+# Example API Requests
 
-### Get All Tasks
+## Get All Tasks
 
 ```bash
 curl -i http://localhost:3000/tasks
@@ -202,7 +291,6 @@ Example response:
 
 ```text
 HTTP/1.1 200 OK
-X-Powered-By: Express
 Content-Type: application/json; charset=utf-8
 ```
 
@@ -226,7 +314,11 @@ Content-Type: application/json; charset=utf-8
 ]
 ```
 
-### Get a Task by ID
+The data is read directly from the SQLite database.
+
+---
+
+## Get a Task by ID
 
 ```bash
 curl -i http://localhost:3000/tasks/1
@@ -242,7 +334,27 @@ Example response:
 }
 ```
 
-### Create a Task
+If the task does not exist:
+
+```bash
+curl -i http://localhost:3000/tasks/99
+```
+
+Response:
+
+```text
+HTTP/1.1 404 Not Found
+```
+
+```json
+{
+  "error": "Task 99 not found"
+}
+```
+
+---
+
+## Create a Task
 
 ```bash
 curl -i -X POST http://localhost:3000/tasks \
@@ -267,11 +379,38 @@ Content-Type: application/json; charset=utf-8
 
 The server automatically:
 
-* Generates the next task ID
+* Generates the task ID
+* Trims the title
 * Sets `done` to `false`
-* Adds the task to the in-memory list
+* Inserts the task into the SQLite database
 
-### Update a Task
+---
+
+## Verify Persistence After Creating a Task
+
+After creating a task, stop the server:
+
+```text
+Ctrl + C
+```
+
+Start it again:
+
+```bash
+npm start
+```
+
+Then request:
+
+```bash
+curl http://localhost:3000/tasks
+```
+
+The created task should still exist because it is stored in `tasks.db` instead of an in-memory array.
+
+---
+
+## Update a Task
 
 ```bash
 curl -i -X PUT http://localhost:3000/tasks/1 \
@@ -293,7 +432,11 @@ HTTP/1.1 200 OK
 }
 ```
 
-### Delete a Task
+The update is written to SQLite using an SQL `UPDATE` statement.
+
+---
+
+## Delete a Task
 
 ```bash
 curl -i -X DELETE http://localhost:3000/tasks/1
@@ -307,13 +450,15 @@ HTTP/1.1 204 No Content
 
 The response body is empty because the task was successfully deleted.
 
+The row is also removed from the SQLite database.
+
 ---
 
-## Validation
+# Validation
 
 The API validates incoming request data.
 
-### Create Task Validation
+## Create Task Validation
 
 The `title` field is required and cannot be empty.
 
@@ -337,7 +482,11 @@ HTTP/1.1 400 Bad Request
 }
 ```
 
-### Update Task Validation
+Whitespace-only titles are also rejected.
+
+---
+
+## Update Task Validation
 
 An update must contain at least one of:
 
@@ -368,7 +517,25 @@ HTTP/1.1 400 Bad Request
 }
 ```
 
-### Unknown Task
+Example invalid title:
+
+```json
+{
+  "title": ""
+}
+```
+
+Response:
+
+```json
+{
+  "error": "Title must be a non-empty string"
+}
+```
+
+---
+
+## Unknown Task
 
 If a task ID does not exist, the API returns `404 Not Found`.
 
@@ -392,40 +559,196 @@ HTTP/1.1 404 Not Found
 
 ---
 
-## HTTP Status Codes
+# HTTP Status Codes
 
-| Status Code | Meaning                             |
-| ----------- | ----------------------------------- |
-| `200`       | Request successful                  |
-| `201`       | Resource created successfully       |
-| `204`       | Resource deleted successfully       |
-| `400`       | Invalid request or validation error |
-| `404`       | Resource not found                  |
-
----
-
-## Data Storage
-
-This project uses an **in-memory array** to store tasks.
-
-There is currently no database or persistent storage.
-
-Because the data is stored only in memory:
-
-* Newly created tasks are lost when the server restarts.
-* Updated tasks return to their initial state after a restart.
-* Deleted tasks return to the initial example dataset after a restart.
-
-The application starts with three example tasks.
+| Status Code | Meaning |
+| --- | --- |
+| `200` | Request successful |
+| `201` | Resource created successfully |
+| `204` | Resource deleted successfully |
+| `400` | Invalid request or validation error |
+| `404` | Resource not found |
 
 ---
 
-## Project Structure
+# Data Storage
+
+## Week 2: In-Memory Storage
+
+In Week 2, tasks were stored in a JavaScript array:
+
+```text
+Express API
+    ↓
+JavaScript Array
+```
+
+This was useful for learning the API and CRUD flow, but the data existed only while the Node.js process was running.
+
+Because the data was stored in memory:
+
+* Newly created tasks were lost after a restart.
+* Updated tasks returned to the initial state after a restart.
+* Deleted tasks returned to the initial example dataset after a restart.
+
+---
+
+## Week 3: SQLite Storage
+
+In Week 3, the storage layer was replaced with SQLite:
+
+```text
+Express API
+    ↓
+better-sqlite3
+    ↓
+tasks.db
+```
+
+The API endpoints remain the same.
+
+The main change is where the data is stored.
+
+### SQLite Schema
+
+```sql
+CREATE TABLE IF NOT EXISTS tasks (
+  id INTEGER PRIMARY KEY,
+  title TEXT NOT NULL,
+  done INTEGER NOT NULL DEFAULT 0
+);
+```
+
+### Boolean Storage
+
+SQLite does not have a separate boolean storage type in the same way JavaScript does.
+
+The project stores:
+
+```text
+0 → false
+1 → true
+```
+
+The API converts the database value back to a JavaScript boolean before returning JSON.
+
+### Persistence
+
+Because tasks are stored in `tasks.db`, data survives server restarts.
+
+For example:
+
+```text
+POST task
+   ↓
+INSERT into SQLite
+   ↓
+Stop server
+   ↓
+Start server
+   ↓
+GET /tasks
+   ↓
+Task still exists
+```
+
+---
+
+# SQLite Exploration
+
+During Week 3, the SQLite database was manually explored using DBeaver.
+
+The following SQL queries were executed:
+
+## View All Tasks
+
+```sql
+SELECT * FROM tasks;
+```
+
+## View Completed Tasks
+
+```sql
+SELECT * FROM tasks WHERE done = 1;
+```
+
+## Count Tasks
+
+```sql
+SELECT COUNT(*) FROM tasks;
+```
+
+## Mark Tasks as Done
+
+```sql
+UPDATE tasks SET done = 1;
+```
+
+## Delete Completed Tasks
+
+```sql
+DELETE FROM tasks WHERE done = 1;
+```
+
+The API was then checked again to verify that database changes were reflected in the API responses.
+
+This helped verify that the API and SQLite database were working with the same underlying data.
+
+---
+
+# Database Initialization Logic
+
+The application creates the table automatically when the server starts:
+
+```sql
+CREATE TABLE IF NOT EXISTS tasks (
+  id INTEGER PRIMARY KEY,
+  title TEXT NOT NULL,
+  done INTEGER NOT NULL DEFAULT 0
+);
+```
+
+The application then checks the number of rows:
+
+```sql
+SELECT COUNT(*) AS count FROM tasks;
+```
+
+If the count is zero, the three example tasks are inserted.
+
+Conceptually:
+
+```text
+Start application
+      ↓
+Open tasks.db
+      ↓
+Create tasks table if missing
+      ↓
+Count existing tasks
+      ↓
+Is the table empty?
+    /       \
+  Yes        No
+   ↓          ↓
+Seed data   Keep existing data
+   \          /
+      ↓
+ Start API
+```
+
+This prevents the seed data from being inserted again every time the server restarts.
+
+---
+
+# Project Structure
 
 ```text
 FlyRankIntern-task-api/
 ├── docs/
-│   └── swagger-ui.png
+│   ├── swagger-ui.png
+│   └── database-viewer.png
+├── tasks.db
 ├── openapi.json
 ├── package.json
 ├── package-lock.json
@@ -434,22 +757,57 @@ FlyRankIntern-task-api/
 └── .gitignore
 ```
 
-### Main Files
+## Main Files
 
-| File                  | Purpose                                                      |
-| --------------------- | ------------------------------------------------------------ |
-| `server.js`           | Express server, routes, validation, and in-memory task logic |
-| `openapi.json`        | OpenAPI specification used by Swagger UI                     |
-| `package.json`        | Project metadata, scripts, and dependencies                  |
-| `README.md`           | Project documentation                                        |
-| `docs/swagger-ui.png` | Swagger UI screenshot                                        |
-| `.gitignore`          | Files ignored by Git                                         |
+| File | Purpose |
+| --- | --- |
+| `server.js` | Express server, routes, validation, SQLite connection, and database operations |
+| `openapi.json` | OpenAPI specification used by Swagger UI |
+| `package.json` | Project metadata, scripts, and dependencies |
+| `package-lock.json` | Locked dependency versions |
+| `tasks.db` | Local SQLite database file |
+| `README.md` | Project documentation |
+| `docs/swagger-ui.png` | Swagger UI screenshot |
+| `docs/database-viewer.png` | SQLite database viewer screenshot |
+| `.gitignore` | Files ignored by Git |
 
 ---
 
-## Git Workflow
+# Why SQLite?
+
+SQLite was chosen for this stage because it is simple and suitable for a small backend project.
+
+It does not require a separate database server.
+
+The database is stored as a local file:
+
+```text
+tasks.db
+```
+
+This makes it useful for learning database-backed APIs without adding infrastructure complexity.
+
+The important learning goal for Week 3 was not to build a large database system, but to understand how an API moves from:
+
+```text
+In-memory storage
+```
+
+to:
+
+```text
+Persistent database storage
+```
+
+while keeping the API contract consistent.
+
+---
+
+# Git Workflow
 
 The project was developed incrementally using Git branches and Pull Requests.
+
+## Week 2
 
 ```text
 Stage 0 → Hello Server
@@ -459,15 +817,49 @@ Stage 3 → Create Task
 Stage 4 → Update & Delete
 Stage 5 → Swagger UI
 Stage 6 → Publish & Documentation
+Stage 7 → AI Rematch
+```
+
+## Week 3
+
+```text
+Stage 0 → Create SQLite Database
+Stage 1 → Database Read Endpoints
+Stage 2 → Insert into Database
+Stage 3 → Update & Delete with SQL
+Stage 4 → Explored SQLite
+Stage 5 → Database Documentation
 ```
 
 Each stage was developed on a separate branch, tested locally, committed, pushed to GitHub, reviewed through a Pull Request, and merged into `main`.
 
+The Week 3 workflow followed the same development habit:
+
+```text
+Create branch
+     ↓
+Implement one stage
+     ↓
+Test locally
+     ↓
+Self-review
+     ↓
+Commit
+     ↓
+Push
+     ↓
+Pull Request
+     ↓
+Review
+     ↓
+Merge into main
+```
+
 ---
 
-## Learning Outcomes
+# Learning Outcomes
 
-Through this project, I practiced:
+Through Week 2 and Week 3, I practiced:
 
 * Building REST APIs with Node.js and Express.js
 * Understanding HTTP methods
@@ -480,6 +872,13 @@ Through this project, I practiced:
 * Testing APIs with `curl`
 * Testing APIs through Swagger UI
 * Writing OpenAPI specifications
+* Using SQLite for persistent storage
+* Using `better-sqlite3` from Node.js
+* Writing basic SQL queries
+* Understanding SQL `SELECT`, `INSERT`, `UPDATE`, and `DELETE`
+* Understanding database initialization and seed data
+* Verifying data persistence after server restarts
+* Inspecting a SQLite database using DBeaver
 * Using Git branches and commits
 * Creating and reviewing Pull Requests
 * Merging feature branches into `main`
@@ -487,13 +886,68 @@ Through this project, I practiced:
 
 ---
 
-## Internship Context
+# Week 2 → Week 3 Progress
 
-This project was developed as part of my **Week 2 internship at FlyRank AI**.
+The project evolved from a simple in-memory CRUD API into a database-backed CRUD API.
 
-The project was built incrementally from a basic Express server into a complete CRUD API with validation, Swagger/OpenAPI documentation, and a GitHub-based development workflow.
+## Week 2
 
-The main goal was not only to build a working API, but also to understand the backend development flow step by step:
+```text
+Client
+  ↓
+Express API
+  ↓
+JavaScript Array
+```
+
+The focus was:
+
+* REST API fundamentals
+* CRUD
+* Validation
+* HTTP status codes
+* Swagger/OpenAPI
+* Git/GitHub workflow
+
+## Week 3
+
+```text
+Client
+  ↓
+Express API
+  ↓
+SQLite
+  ↓
+tasks.db
+```
+
+The focus was:
+
+* Database setup
+* SQLite schema
+* SQL queries
+* Persistent storage
+* CRUD operations with SQL
+* Database exploration
+* Database documentation
+
+The API contract stayed the same while the storage implementation changed.
+
+This was the main practical lesson of the transition: **the client can continue using the same API while the backend changes how it stores data.**
+
+---
+
+# Internship Context
+
+This project was developed as part of my **Week 2 and Week 3 internship at FlyRank AI**.
+
+In Week 2, I built the CRUD API using an in-memory array.
+
+In Week 3, I replaced the in-memory storage with SQLite while keeping the API endpoints and behavior consistent.
+
+The project was built incrementally so that each stage introduced one main concept.
+
+The development process was:
 
 ```text
 Build
@@ -513,11 +967,15 @@ Pull Request
 Merge
 ```
 
+The goal was not only to make the API work, but also to practice a development workflow that can be repeated on larger backend projects.
+
 ---
 
-## AI vs Me (Stage 7 — The AI Rematch)
+# AI vs Me (Stage 7 — The AI Rematch)
 
-### Full Prompt Used
+> **Note:** This section documents the Week 2 AI Rematch experiment. It intentionally describes the in-memory version because that was the architecture used during Stage 7. The SQLite migration was completed separately during Week 3.
+
+## Full Prompt Used
 
 ```text
 Build a REST API for managing tasks using Node.js and Express.js.
@@ -591,21 +1049,87 @@ Keep the implementation simple and beginner-friendly. Do not add authentication,
 After generating the code, explain the project structure and how to install and run the API.
 ```
 
-### Analysis & Differences
+## Analysis & Differences
 
-#### 1. What did the AI do better?
+### 1. What did the AI do better?
+
 * **Clean & Compact Code Structure:** The AI formatted input validation compactly (e.g., checking `typeof title !== 'string' || title.trim() === ''` in a single guard clause).
 * **Explicit HTTP Status Code calls:** The AI explicitly chained `.status(200)` across all read endpoints (e.g. `res.status(200).json(tasks)`), making status codes completely unambiguous in every response handler.
 
-#### 2. What did it get wrong or quietly ignore?
+### 2. What did it get wrong or quietly ignore?
+
 * **Error Response Format:** The hand-built version returns `{ "error": "..." }` while the AI version returned `{ "message": "..." }` because the exact JSON property key for errors was not strictly defined in the prompt.
 * **Express Framework Version:** The AI selected Express 4.x (`^4.18.2`) in `package.json`, whereas our hand-built project uses Express 5.x (`^5.2.1`).
 
-#### 3. What did your prompt forget to specify — and what did the AI silently decide?
+### 3. What did your prompt forget to specify — and what did the AI silently decide?
+
 * **Error Payload Key Name:** The prompt stated "return HTTP 400 with a JSON error message", so the AI decided on `{ "message": "..." }` instead of `{ "error": "..." }`.
 * **Seed Data Content:** The prompt did not specify initial array data, so the AI silently generated its own sample task items (`Learn Node.js`, `Build Express API`).
 
-### Rematch & Prompt Improvement
+## Rematch & Prompt Improvement
 
 * **Prompt Improvement Note:** Specifying `Error responses must follow the format {"error": "<message>"}` and explicitly stating `Use Express 5.x` closed all minor gaps between the AI-generated code and our hand-built API.
 
+---
+
+# Current Architecture
+
+The current project uses:
+
+```text
+Client
+   ↓
+Express.js API
+   ↓
+better-sqlite3
+   ↓
+SQLite
+   ↓
+tasks.db
+```
+
+Swagger/OpenAPI provides API documentation:
+
+```text
+Client / Developer
+       ↓
+Swagger UI
+       ↓
+Express API
+       ↓
+SQLite
+```
+
+---
+
+# Week 3 Completion Checklist
+
+* [x] SQLite database created
+* [x] `tasks` table created automatically
+* [x] Three example tasks seeded only when the table is empty
+* [x] GET `/tasks` reads from SQLite
+* [x] GET `/tasks/:id` reads from SQLite
+* [x] POST `/tasks` inserts into SQLite
+* [x] PUT `/tasks/:id` updates SQLite
+* [x] DELETE `/tasks/:id` deletes from SQLite
+* [x] Unknown task IDs return `404`
+* [x] Invalid requests return `400`
+* [x] Data survives server restart
+* [x] SQLite explored using DBeaver
+* [x] Required SQL queries executed
+* [x] README updated
+* [x] Swagger screenshot included
+* [x] Database viewer screenshot included
+* [x] Changes prepared through Git branch and Pull Request workflow
+
+---
+
+# Final Notes
+
+Week 2 established the API fundamentals.
+
+Week 3 changed the storage layer from an in-memory array to a persistent SQLite database.
+
+The main result is a CRUD API that keeps the same client-facing endpoints while storing task data in a real database.
+
+This provides a foundation for future backend work where the API layer and database layer can continue to evolve independently.
