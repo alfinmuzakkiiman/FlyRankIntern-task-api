@@ -1,40 +1,10 @@
 import express from "express";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
-import Database from "better-sqlite3";
+import { initializeDatabase } from "./repositories/postgres.js";
 
 const app = express();
 const PORT = 3000;
-
-// ====================
-// Database
-// ====================
-
-const db = new Database("tasks.db");
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY,
-    title TEXT NOT NULL,
-    done INTEGER NOT NULL DEFAULT 0
-  )
-`);
-
-// Seed example tasks only if the table is empty
-const taskCount = db
-  .prepare("SELECT COUNT(*) AS count FROM tasks")
-  .get();
-
-if (taskCount.count === 0) {
-  const insertTask = db.prepare(`
-    INSERT INTO tasks (title, done)
-    VALUES (?, ?)
-  `);
-
-  insertTask.run("Learn Express", 0);
-  insertTask.run("Build Task API", 0);
-  insertTask.run("Test API endpoints", 1);
-}
 
 // ====================
 // OpenAPI / Swagger
@@ -217,6 +187,13 @@ app.delete("/tasks/:id", (req, res) => {
 // Start server
 // ====================
 
-app.listen(PORT, () => {
-  console.log(`Task API running on http://localhost:${PORT}`);
-});
+initializeDatabase()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Task API running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Failed to initialize database:", error);
+    process.exit(1);
+  });
