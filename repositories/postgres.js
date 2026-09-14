@@ -9,6 +9,20 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+export async function getTasks() {
+  const result = await pool.query("SELECT * FROM tasks ORDER BY id");
+  return result.rows;
+}
+
+export async function getTaskById(id) {
+  const result = await pool.query(
+    "SELECT * FROM tasks WHERE id = $1",
+    [id]
+  );
+
+  return result.rows[0];
+}
+
 export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS tasks (

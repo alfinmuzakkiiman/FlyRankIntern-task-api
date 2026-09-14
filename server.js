@@ -1,7 +1,11 @@
 import express from "express";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
-import { initializeDatabase } from "./repositories/postgres.js";
+import {
+  initializeDatabase,
+  getTasks,
+  getTaskById,
+} from "./repositories/postgres.js";
 
 const app = express();
 const PORT = 3000;
@@ -46,61 +50,33 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.get("/tasks", (req, res) => {
-  const tasks = db.prepare("SELECT * FROM tasks").all();
+app.get("/tasks", async (req, res) => {
+  try {
+    const tasks = await getTasks();
 
-  res.json(
-    tasks.map((task) => ({
-      ...task,
-      done: Boolean(task.done),
-    }))
-  );
+    res.json(tasks);
+  } catch (error) {
+    console.error("Failed to get tasks:", error);
+    res.status(500).json({ error: "Failed to get tasks" });
+  }
 });
 
-app.get("/tasks/:id", (req, res) => {
-  const id = Number(req.params.id);
+app.get("/tasks/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const task = await getTaskById(id);
 
-  const task = db 
-  .prepare("SELECT * FROM tasks WHERE id = ?")
-  .get(id);
+    if (!task) {
+      return res.status(404).json({
+        error: `Task ${id} not found`,
+      });
+    }
 
-  if (!task) {
-    return res.status(404).json({
-      error: `Task ${id} not found`,
-    });
+    res.json(task);
+  } catch (error) {
+    console.error("Failed to get task:", error);
+    res.status(500).json({ error: "Failed to get task" });
   }
-
-  res.json({
-    ...task,
-    done: Boolean(task.done),
-  });
-});
-
-
-app.post("/tasks",(req, res) => {
-  const { title } = req.body;
-
-  if (!title || title.trim() === "") {
-    return res.status(400).json({
-      error: "Title is required",
-    });
-  }
-
-  const result = db 
-  .prepare(`
-    INSERT INTO tasks (title, done )
-    values (?, ?)
-    `)
-    .run(title.trim(), 0);
-
-    const newTask = db 
-    .prepare("SELECT * FROM tasks WHERE id = ?")
-    .get(result.lastInsertRowid);
-
-    res.status(201).json({
-      ...newTask,
-      done: Boolean(newTask.done),
-    });
 });
 
 app.put("/tasks/:id", (req, res) => {
