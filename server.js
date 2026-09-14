@@ -5,6 +5,9 @@ import {
   initializeDatabase,
   getTasks,
   getTaskById,
+  createTask,
+  updateTask,
+  deleteTask,
 } from "./repositories/postgres.js";
 
 const app = express();
@@ -79,84 +82,94 @@ app.get("/tasks/:id", async (req, res) => {
   }
 });
 
-app.put("/tasks/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const { title, done } = req.body;
+app.post("/tasks", async (req, res) => {
+  try {
+    const { title } = req.body;
 
-  //Check if task exists
-  const task = db 
-  .prepare("SELECT * FROM tasks WHERE id = ?")
-  .get(id);
-
-  if (!task) {
-    return res.status(404).json({
-      error: `Task ${id} not found`,
-    });
-  }
-
-  //Validate request body 
-  if ((title === undefined || title === "") && done === undefined) {
-    return res.status(400).json({
-      error: "Title or done is required",
-    });
-  }
-
-  if (title !== undefined) {
-    if (typeof title !== "string" || title.trim() === "") {
+    if (!title || title.trim() === "") {
       return res.status(400).json({
-        error: "Title Must be a non-empty string",
+        error: "Title is required",
       });
     }
+
+    const newTask = await createTask(title.trim());
+
+    res.status(201).json(newTask);
+  } catch (error) {
+    console.error("Failed to create task:", error);
+    res.status(500).json({ error: "Failed to create task" });
   }
-
-  if (done !== undefined) {
-    if(typeof done !== "boolean") {
-      return res.status(400).json({
-        error: "Done must be a bolean",
-      });
-    }
-  }
-
-  //Update only The fields provided
-  const updatedTitle =  
-  title !== undefined ? title.trim() : task.title;
-
-  const updateDone =
-  done !== undefined ? Number(done) : task.done;
-
-  db.prepare(`
-    UPDATE tasks
-    set title = ?, done = ?
-    WHERE id = ?
-    `).run(updatedTitle, updateDone, id);
-
-    // Return updated task
-    const updatedTask = db 
-    .prepare(" SELECT * FROM tasks WHERE id = ?")
-    .get(id);
-
-    res.json({
-      ...updatedTask,
-      done: Boolean(updatedTask.done),
-    });
 });
 
-app.delete("/tasks/:id", (req, res) => {
-  const id = Number(req.params.id);
+app.put("/tasks/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { title, done } = req.body;
 
-  const task = db
-    .prepare("SELECT * FROM tasks WHERE id = ?")
-    .get(id);
+    if (title === undefined && done === undefined) {
+      return res.status(400).json({
+        error: "Title or done is required",
+      });
+    }
 
-  if (!task) {
-    return res.status(404).json({
-      error: `Task ${id} not found`,
-    });
+    if (title !== undefined && (typeof title !== "string" || title.trim() === "")) {
+      return res.status(400).json({
+        error: "Title must be a non-empty string",
+      });
+    }
+
+    if (done !== undefined && typeof done !== "boolean") {
+      return res.status(400).json({
+        error: "Done must be a boolean",
+      });
+    }
+
+    const existingTask = await getTaskById(id);
+
+    if (!existingTask) {
+      return res.status(404).json({
+        error: `Task ${id} not found`,
+      });
+    }
+
+    const updatedTitle = title !== undefined
+      ? title.trim()
+      : existingTask.title;
+
+    const updatedDone = done !== undefined
+      ? done
+      : existingTask.done;
+
+    const updatedTask = await updateTask(
+      id,
+      updatedTitle,
+      updatedDone
+    );
+
+    res.json(updatedTask);
+  } catch (error) {
+    console.error("Failed to update task:", error);
+    res.status(500).json({ error: "Failed to update task" });
   }
+});
 
-  db.prepare("DELETE FROM tasks WHERE id = ?").run(id);
+app.delete("/tasks/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
 
-  res.status(204).send();
+    const deletedTask = await deleteTask(id);
+
+    if (!deletedTask) {
+      return res.status(404).json({
+        error: `Task ${id} not found`,
+      });
+    }
+
+    res.status(204).send();
+  } catch (error) {
+    console.error("Failed to delete task:", error);
+    res.status(500).json({ error: "Failed to delete task" });
+  }
 });
 
 // ====================
