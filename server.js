@@ -111,6 +111,48 @@ app.post("/auth/signup", async (req, res) => {
   }
 });
 
+app.post("/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate input
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      email.trim() === "" ||
+      password.trim() === ""
+    ) {
+      return res.status(400).json({
+        error: "Email and password are required",
+      });
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (error) {
+      console.error("Login failed:", error);
+
+      return res.status(401).json({
+        error: "Invalid email or password",
+      });
+    }
+
+    return res.status(200).json({
+      accessToken: data.session.access_token,
+      user: data.user,
+    });
+  } catch (error) {
+    console.error("Login failed:", error);
+
+    return res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+});
+
 app.get("/tasks", async (req, res) => {
   try {
     const tasks = await getTasks();
