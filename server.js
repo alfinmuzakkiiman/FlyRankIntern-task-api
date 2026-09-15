@@ -9,6 +9,8 @@ import {
   updateTask,
   deleteTask,
 } from "./repositories/postgres.js";
+import supabase from "./repositories/supabase.js";
+
 
 const app = express();
 const PORT = 3000;
