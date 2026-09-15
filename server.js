@@ -55,6 +55,62 @@ app.get("/health", (req, res) => {
   });
 });
 
+// ====================
+// Auth Routes
+// ====================
+
+app.post("/auth/signup", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate input
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      email.trim() === "" ||
+      password.trim() === ""
+    ) {
+      return res.status(400).json({
+        error: "Email and password are required",
+      });
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+    });
+
+    if (error) {
+      console.error("Signup failed:", error);
+
+      // Duplicate email
+      if (
+        error.message?.toLowerCase().includes("already registered") ||
+        error.message?.toLowerCase().includes("already exists")
+      ) {
+        return res.status(409).json({
+          error: "Email already registered",
+        });
+      }
+
+      return res.status(400).json({
+        error: error.message,
+      });
+    }
+
+    return res.status(201).json({
+      userId: data.user.id,
+      email: data.user.email,
+    });
+  } catch (error) {
+    console.error("Signup failed:", error);
+
+    return res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+});
+
 app.get("/tasks", async (req, res) => {
   try {
     const tasks = await getTasks();
