@@ -10,6 +10,7 @@ import {
   deleteTask,
 } from "./repositories/postgres.js";
 import supabase from "./repositories/supabase.js";
+import { createClient } from "@supabase/supabase-js";
 
 
 const app = express();
@@ -207,12 +208,40 @@ app.get("/protected/profile", requireAuth, (req, res) => {
 
 app.post("/auth/logout", requireAuth, async (req, res) => {
   try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader.substring(7);
+
+    const userSupabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_KEY,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false,
+        },
+      }
+    );
+
+    const { error } = await userSupabase.auth.signOut();
+
+    if (error) {
+      console.error("Logout failed:", error);
+      return res.status(401).json({
+        error: "Logout failed",
+      });
+    }
+
     return res.status(200).json({
       message: "Logout successful",
     });
   } catch (error) {
     console.error("Logout failed:", error);
-
     return res.status(500).json({
       error: "Internal server error",
     });
