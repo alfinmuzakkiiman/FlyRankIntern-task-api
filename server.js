@@ -153,6 +153,58 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
+// ====================
+// Auth Middleware
+// ====================
+
+const requireAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+    }
+
+    const token = authHeader.substring(7);
+
+    if (!token) {
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+    }
+
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+    }
+
+    req.user = user;
+
+    next();
+  } catch (error) {
+    console.error("Auth middleware failed:", error);
+
+    return res.status(401).json({
+      error: "Unauthorized",
+    });
+  }
+};
+
+app.get("/protected/profile", requireAuth, (req, res) => {
+  return res.status(200).json({
+    userId: req.user.id,
+    email: req.user.email,
+  });
+});
+
 app.get("/tasks", async (req, res) => {
   try {
     const tasks = await getTasks();
