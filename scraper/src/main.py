@@ -1,20 +1,36 @@
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 from time import sleep
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 import requests
-
+from pydantic import BaseModel, HttpUrl, ValidationError
 
 
 BASE_URL = "https://books.toscrape.com/"
 CACHE_DIR = Path(__file__).resolve().parents[1] / "cache"
 CACHE_FILE = CACHE_DIR / "catalogue-page-1.html"
 
-USER_AGENT = "FlyRank-PoliteScraper/1.0 (+https://github.com/alfinmuzakkiiman/FlyRankIntern-task-api)"
+USER_AGENT = (
+    "FlyRank-PoliteScraper/1.0 "
+    "(+https://github.com/alfinmuzakkiiman/FlyRankIntern-task-api)"
+)
 TIMEOUT_SECONDS = 10
 REQUEST_DELAY_SECONDS = 0.5
+
+
+class BookRecord(BaseModel):
+    title: str
+    product_url: HttpUrl
+    price_text: str
+    price_gbp: float
+    availability_text: str | None
+    rating_text: str | None
+    description: str | None
+    source_page: HttpUrl
+    fetched_at: datetime
 
 
 def fetch_url(url):
@@ -69,6 +85,7 @@ def discover_catalogue_pages(html):
             break
 
         href = next_link.get("href")
+
         if not href:
             break
 
@@ -108,7 +125,9 @@ def discover_book_urls(catalogue_pages):
 
             product_url = urljoin(page_url, href)
 
-            if product_url not in [item["product_url"] for item in discovered]:
+            if product_url not in [
+                item["product_url"] for item in discovered
+            ]:
                 discovered.append(
                     {
                         "product_url": product_url,
@@ -155,12 +174,15 @@ def extract_book_details(html, product_url, source_page):
     )
 
     rating_text = None
+
     if rating_element is not None:
         rating_classes = rating_element.get("class", [])
+
         if len(rating_classes) >= 2:
             rating_text = rating_classes[1]
 
     description = None
+
     if description_element is not None:
         description = description_element.get_text(
             " ",
@@ -180,7 +202,10 @@ def extract_book_details(html, product_url, source_page):
             else None
         ),
         "availability_text": (
-            availability_element.get_text(" ", strip=True)
+            availability_element.get_text(
+                " ",
+                strip=True,
+            )
             if availability_element is not None
             else None
         ),
@@ -189,6 +214,78 @@ def extract_book_details(html, product_url, source_page):
         "source_page": source_page,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def normalize_price(price_text):
+    if not price_text:
+        raise ValueError("price_text is missing")
+
+    cleaned_price = (
+        price_text
+        .replace("Â£", "")
+        .replace("£", "")
+        .strip()
+    )
+
+    return float(cleaned_price)
+
+
+def normalize_record(raw_record):
+    normalized_record = {
+        **raw_record,
+        "price_gbp": normalize_price(raw_record["price_text"]),
+    }
+
+    return BookRecord.model_validate(normalized_record)
+
+
+def store_records(raw_records):
+    output_dir = Path(__file__).resolve().parents[1] / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_records = []
+    errors = []
+
+    for raw_record in raw_records:
+        try:
+            record = normalize_record(raw_record)
+            valid_records.append(
+                record.model_dump(mode="json")
+            )
+
+        except (ValueError, ValidationError) as error:
+            errors.append(
+                {
+                    "product_url": raw_record.get("product_url"),
+                    "error": str(error),
+                }
+            )
+
+    books_file = output_dir / "books.json"
+    errors_file = output_dir / "errors.json"
+
+    books_file.write_text(
+        json.dumps(
+            valid_records,
+            indent=2,
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    errors_file.write_text(
+        json.dumps(
+            errors,
+            indent=2,
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    print(f"valid_records={len(valid_records)}")
+    print(f"invalid_records={len(errors)}")
+    print(f"books_file={books_file}")
+    print(f"errors_file={errors_file}")
 
 
 def main():
@@ -223,9 +320,16 @@ def main():
 
         raw_records.append(raw_record)
 
+    store_records(raw_records)
+
     print(f"detail_pages={len(raw_records)}")
     print("first_raw_record=")
     print(raw_records[0])
+
+    normalized_record = normalize_record(raw_records[0])
+
+    print("first_normalized_record=")
+    print(normalized_record.model_dump())
 
 
 if __name__ == "__main__":
