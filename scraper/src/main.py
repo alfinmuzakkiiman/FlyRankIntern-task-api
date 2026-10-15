@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 from time import sleep
 from urllib.parse import urljoin
@@ -20,6 +21,12 @@ USER_AGENT = (
 TIMEOUT_SECONDS = 10
 REQUEST_DELAY_SECONDS = 0.5
 
+RUN_STATS = {
+    "pages_fetched": 0,
+    "cache_hits": 0,
+    "failed_pages": [],
+}
+
 
 class BookRecord(BaseModel):
     title: str
@@ -38,23 +45,53 @@ def fetch_url(url):
         "User-Agent": USER_AGENT,
     }
 
-    response = requests.get(
-        url,
-        headers=headers,
-        timeout=TIMEOUT_SECONDS,
-    )
+    for attempt in range(2):
+        try:
+            response = requests.get(
+                url,
+                headers=headers,
+                timeout=TIMEOUT_SECONDS,
+            )
+        except requests.exceptions.Timeout:
+            if attempt == 0:
+                sleep(REQUEST_DELAY_SECONDS)
+                continue
 
-    if response.status_code != 200:
+            raise RuntimeError(
+                "Request timed out after retry"
+            )
+
+        if response.status_code == 200:
+            RUN_STATS["pages_fetched"] += 1
+            return response.text
+
+        if response.status_code in (403, 404):
+            raise RuntimeError(
+                f"Request blocked or page not found: "
+                f"{response.status_code}"
+            )
+
+        if 500 <= response.status_code <= 599:
+            if attempt == 0:
+                sleep(REQUEST_DELAY_SECONDS)
+                continue
+
+            raise RuntimeError(
+                f"Server error after retry: "
+                f"{response.status_code}"
+            )
+
         raise RuntimeError(
             f"Expected HTTP 200, got {response.status_code}"
         )
 
-    return response.text
+    raise RuntimeError("Request failed after retry")
 
 
 def fetch_catalogue_page():
     if CACHE_FILE.exists():
         print(f"Cache hit: {CACHE_FILE}")
+        RUN_STATS["cache_hits"] += 1
         return CACHE_FILE.read_text(encoding="utf-8")
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -146,6 +183,7 @@ def cache_detail_page(product_url, index):
 
     if cache_file.exists():
         print(f"Cache hit: {cache_file}")
+        RUN_STATS["cache_hits"] += 1
         return cache_file.read_text(encoding="utf-8")
 
     sleep(REQUEST_DELAY_SECONDS)
@@ -249,6 +287,7 @@ def store_records(raw_records):
     for raw_record in raw_records:
         try:
             record = normalize_record(raw_record)
+
             valid_records.append(
                 record.model_dump(mode="json")
             )
@@ -287,11 +326,51 @@ def store_records(raw_records):
     print(f"books_file={books_file}")
     print(f"errors_file={errors_file}")
 
+    return len(valid_records), len(errors)
+
+
+def write_run_report(
+    start_time,
+    duration_seconds,
+    valid_count,
+    invalid_count,
+):
+    output_dir = Path(__file__).resolve().parents[1] / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    report = {
+        "start_time": start_time,
+        "duration_seconds": round(duration_seconds, 2),
+        "pages_fetched": RUN_STATS["pages_fetched"],
+        "cache_hits": RUN_STATS["cache_hits"],
+        "valid_records": valid_count,
+        "invalid_records": invalid_count,
+        "failed_pages": len(RUN_STATS["failed_pages"]),
+        "failed_page_urls": RUN_STATS["failed_pages"],
+    }
+
+    report_file = output_dir / "run-report.json"
+
+    report_file.write_text(
+        json.dumps(
+            report,
+            indent=2,
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    print(f"run_report_file={report_file}")
+
 
 def main():
+    start_datetime = datetime.now(timezone.utc)
+    start_time = start_datetime.isoformat()
+
     html = fetch_catalogue_page()
 
     catalogue_pages = discover_catalogue_pages(html)
+
     print(f"catalogue_pages={len(catalogue_pages)}")
 
     for page in catalogue_pages:
@@ -304,32 +383,62 @@ def main():
         f"unique_urls={len({item['product_url'] for item in book_urls})}"
     )
 
+    # URL palsu hanya ditambahkan saat mode pengujian diaktifkan.
+    if os.getenv("SCRAPER_TEST_FAILURE") == "1":
+        test_url = "https://stage-5-failure-test.invalid/"
+
+        book_urls.append(
+            {
+                "product_url": test_url,
+                "source_page": BASE_URL,
+            }
+        )
+
+        print(f"Injected test failure URL: {test_url}")
+
     raw_records = []
 
     for index, book in enumerate(book_urls, start=1):
-        detail_html = cache_detail_page(
-            book["product_url"],
-            index,
-        )
+        try:
+            detail_html = cache_detail_page(
+                book["product_url"],
+                index,
+            )
 
-        raw_record = extract_book_details(
-            detail_html,
-            book["product_url"],
-            book["source_page"],
-        )
+            raw_record = extract_book_details(
+                detail_html,
+                book["product_url"],
+                book["source_page"],
+            )
 
-        raw_records.append(raw_record)
+            raw_records.append(raw_record)
 
-    store_records(raw_records)
+        except Exception as error:
+            print(
+                f"Failed page: {book['product_url']} "
+                f"({error})"
+            )
 
-    print(f"detail_pages={len(raw_records)}")
-    print("first_raw_record=")
-    print(raw_records[0])
+            RUN_STATS["failed_pages"].append(
+                book["product_url"]
+            )
 
-    normalized_record = normalize_record(raw_records[0])
+            continue
 
-    print("first_normalized_record=")
-    print(normalized_record.model_dump())
+    valid_count, invalid_count = store_records(raw_records)
+
+    end_datetime = datetime.now(timezone.utc)
+
+    duration_seconds = (
+        end_datetime - start_datetime
+    ).total_seconds()
+
+    write_run_report(
+        start_time,
+        duration_seconds,
+        valid_count,
+        invalid_count,
+    )
 
 
 if __name__ == "__main__":
