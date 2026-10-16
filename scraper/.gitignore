@@ -1,9 +1,10 @@
-@"
+
 __pycache__/
 *.pyc
 .venv/
 .env
 data/
-output/
+output/*
+!output/books.json
+!output/run-report.json
 cache/
-"@ | Set-Content scraper\.gitignore
