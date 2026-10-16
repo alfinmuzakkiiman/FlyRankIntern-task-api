@@ -42,29 +42,43 @@ Requirements: Python 3.10 or newer.
 
 From the repository root, install dependencies:
 
-`powershell
+```powershell
 py -m pip install requests beautifulsoup4 pydantic
-`
+```
 
 ## Run
 
+The scraper caches fetched HTML so subsequent runs can reuse cached pages and reduce unnecessary requests.
+
 From the repository root:
 
-`powershell
+```powershell
 py scraper/src/main.py
-`
-
-The scraper caches fetched HTML so subsequent runs can reuse cached pages and reduce unnecessary requests.
+```
 
 ## Output Files
 
-Generated files are stored in scraper/output/:
+Generated files are stored in `scraper/output/`:
 
-- ooks.json — validated book records.
-- errors.json — records that failed normalization or validation.
-- un-report.json — run timing, fetched-page count, cache hits, valid and invalid record counts, and failed-page details.
+- `books.json` — validated book records.
+- `errors.json` — records that failed normalization or validation.
+- `run-report.json` — run timing, fetched-page count, cache hits, valid and invalid record counts, and failed-page details.
 
 The expected successful result is 60 unique valid book records. Actual results depend on available pages and execution conditions.
+
+### Record Schema
+
+Each validated book record contains:
+
+- `title`: string
+- `product_url`: HTTP URL
+- `price_text`: string
+- `price_gbp`: number
+- `availability_text`: string or `null`
+- `rating_text`: string or `null`
+- `description`: string or `null`
+- `source_page`: HTTP URL
+- `fetched_at`: ISO-formatted datetime
 
 
 ## Example Run Evidence
@@ -104,13 +118,13 @@ page failure does not stop the entire scraping job.
 
 A simulated failure can be tested with the SCRAPER_TEST_FAILURE environment variable in PowerShell:
 
-`powershell
- = "1"
+```powershell
+$env:SCRAPER_TEST_FAILURE = "1"
 py scraper/src/main.py
 Remove-Item Env:SCRAPER_TEST_FAILURE
-`
+```
 
-This test adds a deliberately invalid test URL. The failed page should appear in un-report.json, while other successfully processed books should still be stored.
+This test adds a deliberately invalid test URL. The failed page should appear in `run-report.json`, while other successfully processed books should still be stored.
 
 ## HTTP Request vs Browser Automation
 
@@ -137,4 +151,11 @@ This comparison is a small experiment, not a universal performance benchmark.
 
 ## Ethics and Reuse
 
-I will not reuse this code on another site without checking its rules and terms first.
+- Check the target website's robots.txt, terms, and applicable rules before scraping.
+- Prefer an official API when one is available and suitable for the task.
+- Never bypass logins, paywalls, access controls, or anti-bot blocks.
+- Collect only the data needed for the stated purpose.
+- Use a descriptive User-Agent, request timeouts, delays, and caching to reduce unnecessary requests.
+- Do not reuse this scraper on another site without checking its rules and terms first.
+
+The robots.txt URL checked for this assignment returned 404 Not Found. This is not treated as blanket permission to scrape other websites. The project remains limited to the Books to Scrape practice target.
