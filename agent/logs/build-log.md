@@ -41,7 +41,7 @@ I tested the agent with a different brief about renewable energy. Without changi
 
 After the test, I restored the original FL-07 brief and ran the agent again. The original brief was processed successfully.
 
-The test showed that the agent can handle different assignment topics using the same workflow. I also noticed a small spacing typo in the generated Indonesian review (`jelasdan`). This means the output is useful but still needs a quality check before submission.
+The test showed that the agent can handle different assignment topics using the same workflow. I also noticed a small spacing typo in the generated Indonesian review (`jelas dan`). This means the output is useful but still needs a quality check before submission.
 
 
 ## 7. Raw Screen Capture
