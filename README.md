@@ -1843,3 +1843,10 @@ localhost:5433
 ```
 
 This project provides a foundation for future backend work where the API layer, database layer, authentication layer, and deployment environment can continue to evolve independently.
+## LLM Provider Configuration (W7 A17)
+
+The LLM client reads `LLM_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` from `.env`. To switch between local Ollama and a compatible hosted provider, change these configuration values rather than hard-coding the provider in application code. Never commit `.env`.
+
+## LLM Provider Configuration (W7 A17)
+
+The LLM client reads `LLM_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` from `.env`. To switch between local Ollama and a compatible hosted provider, change these configuration values rather than hard-coding the provider in application code. Never commit `.env`.
