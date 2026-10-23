@@ -11,7 +11,6 @@ import {
 } from "./repositories/postgres.js";
 import supabase from "./repositories/supabase.js";
 import { createClient } from "@supabase/supabase-js";
-import enrichRouter from "./src/routes/enrich.js";
 
 
 const app = express();
@@ -32,7 +31,6 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapiDocument));
 // ====================
 
 app.use(express.json());
-app.use(enrichRouter);
 
 // ====================
 // Temporary in-memory data
