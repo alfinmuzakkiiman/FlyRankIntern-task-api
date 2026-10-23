@@ -1850,3 +1850,19 @@ The LLM client reads `LLM_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` from `.env`.
 ## LLM Provider Configuration (W7 A17)
 
 The LLM client reads `LLM_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` from `.env`. To switch between local Ollama and a compatible hosted provider, change these configuration values rather than hard-coding the provider in application code. Never commit `.env`.
+
+## W7 A17 — Versioned Prompt (Stage 2)
+
+The enrichment system prompt is versioned in
+`src/llm/prompts/enrich.v1.js`.
+
+- `ENRICH_PROMPT_VERSION` identifies the prompt version.
+- `buildEnrichMessages(book)` builds the system and user messages.
+- `src/llm/enrich.js` calls the configured LLM through the OpenAI-compatible SDK.
+- The raw model response is returned together with the prompt version.
+
+The prompt and LLM call were tested locally with Ollama.
+JSON parsing and output schema validation are handled in a later stage.
+
+Run the API-level integration tests separately; `POST /enrich`
+still uses the deterministic stub at this stage.
