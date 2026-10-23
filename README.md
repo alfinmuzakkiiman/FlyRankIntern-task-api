@@ -1866,3 +1866,23 @@ JSON parsing and output schema validation are handled in a later stage.
 
 Run the API-level integration tests separately; `POST /enrich`
 still uses the deterministic stub at this stage.
+
+
+## W7 A17 — JSON Parsing, Validation and Repair (Stage 3)
+
+The enrichment pipeline parses the LLM response as JSON and validates it using the Zod output schema.
+
+- Invalid JSON or schema output triggers one repair attempt.
+- If the repaired response remains invalid, the failed record is quarantined in JSONL format.
+- The default quarantine location is `data/quarantine/enrichment-failures.jsonl`.
+- Set `LLM_QUARANTINE_PATH` to override the quarantine file location.
+- The endpoint returns `502 Bad Gateway` when output remains invalid after repair.
+
+Run the automated pipeline tests:
+
+```bash
+node --test tests/llm-pipeline.test.js
+```
+
+The tests cover valid responses, malformed JSON, schema validation,
+single repair attempts, quarantine behavior, and JSONL file writing.
