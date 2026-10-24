@@ -7,6 +7,7 @@ import {
   enrichBook,
   EnrichmentQuarantinedError,
 } from "../llm/pipeline.js";
+import { isLLMEnabled } from "../llm/reliability.js";
 
 const router = Router();
 
@@ -50,6 +51,13 @@ router.post("/enrich", async (req, res) => {
     }
 
     return res.status(200).json(outputResult.data);
+  }
+
+  if (!isLLMEnabled()) {
+    return res.status(503).json({
+      error: "LLM enrichment is disabled",
+      code: "LLM_DISABLED",
+    });
   }
 
   try {
