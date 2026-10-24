@@ -1,0 +1,221 @@
+{
+  "suite": "stage5-v1",
+  "startedAt": "2026-10-24T05:58:49.085Z",
+  "completedAt": "2026-10-24T05:59:07.480Z",
+  "durationMs": 18395,
+  "model": "qwen3:8b",
+  "totalCases": 8,
+  "passed": 8,
+  "failed": 0,
+  "passRate": 1,
+  "results": [
+    {
+      "id": "fiction-clear",
+      "scenario": "Clearly described fiction",
+      "expectedCategory": "fiction",
+      "actualCategory": "fiction",
+      "requiredFlags": [],
+      "actualFlags": [],
+      "checks": {
+        "schemaValid": true,
+        "categoryMatch": true,
+        "requiredFlagsPresent": true,
+        "summaryValid": true
+      },
+      "passed": true,
+      "repaired": false,
+      "promptVersion": "enrich-v2",
+      "durationMs": 3437,
+      "output": {
+        "category": "fiction",
+        "summary": "A fantasy novel about a hobbit who joins a dangerous quest.",
+        "quality_flags": []
+      }
+    },
+    {
+      "id": "non-fiction-clear",
+      "scenario": "Clearly described non-fiction",
+      "expectedCategory": "non_fiction",
+      "actualCategory": "non_fiction",
+      "requiredFlags": [],
+      "actualFlags": [],
+      "checks": {
+        "schemaValid": true,
+        "categoryMatch": true,
+        "requiredFlagsPresent": true,
+        "summaryValid": true
+      },
+      "passed": true,
+      "repaired": false,
+      "promptVersion": "enrich-v2",
+      "durationMs": 2117,
+      "output": {
+        "category": "non_fiction",
+        "summary": "A popular science book explaining cosmology, black holes, and the history of the universe.",
+        "quality_flags": []
+      }
+    },
+    {
+      "id": "children-clear",
+      "scenario": "Clearly described children's book",
+      "expectedCategory": "children",
+      "actualCategory": "children",
+      "requiredFlags": [],
+      "actualFlags": [],
+      "checks": {
+        "schemaValid": true,
+        "categoryMatch": true,
+        "requiredFlagsPresent": true,
+        "summaryValid": true
+      },
+      "passed": true,
+      "repaired": false,
+      "promptVersion": "enrich-v2",
+      "durationMs": 1902,
+      "output": {
+        "category": "children",
+        "summary": "A children's picture book about a caterpillar's journey to becoming a butterfly.",
+        "quality_flags": []
+      }
+    },
+    {
+      "id": "poetry-clear",
+      "scenario": "Clearly described poetry",
+      "expectedCategory": "poetry",
+      "actualCategory": "poetry",
+      "requiredFlags": [],
+      "actualFlags": [],
+      "checks": {
+        "schemaValid": true,
+        "categoryMatch": true,
+        "requiredFlagsPresent": true,
+        "summaryValid": true
+      },
+      "passed": true,
+      "repaired": false,
+      "promptVersion": "enrich-v2",
+      "durationMs": 2065,
+      "output": {
+        "category": "poetry",
+        "summary": "A collection of poetry exploring love, loss, seasons, and the natural world.",
+        "quality_flags": []
+      }
+    },
+    {
+      "id": "reference-clear",
+      "scenario": "Clearly described reference book",
+      "expectedCategory": "reference",
+      "actualCategory": "reference",
+      "requiredFlags": [],
+      "actualFlags": [],
+      "checks": {
+        "schemaValid": true,
+        "categoryMatch": true,
+        "requiredFlagsPresent": true,
+        "summaryValid": true
+      },
+      "passed": true,
+      "repaired": false,
+      "promptVersion": "enrich-v2",
+      "durationMs": 2229,
+      "output": {
+        "category": "reference",
+        "summary": "A comprehensive reference dictionary offering definitions, spelling, pronunciation, and usage examples for English words.",
+        "quality_flags": []
+      }
+    },
+    {
+      "id": "mixed-format",
+      "scenario": "Ambiguous mixed-format publication",
+      "expectedCategory": "other",
+      "actualCategory": "other",
+      "requiredFlags": [
+        "ambiguous_category"
+      ],
+      "actualFlags": [
+        "ambiguous_category"
+      ],
+      "checks": {
+        "schemaValid": true,
+        "categoryMatch": true,
+        "requiredFlagsPresent": true,
+        "summaryValid": true
+      },
+      "passed": true,
+      "repaired": false,
+      "promptVersion": "enrich-v2",
+      "durationMs": 2324,
+      "output": {
+        "category": "other",
+        "summary": "A mixed-format publication blending fiction, poetry, essays, recipes, and travel notes.",
+        "quality_flags": [
+          "ambiguous_category"
+        ]
+      }
+    },
+    {
+      "id": "missing-description",
+      "scenario": "Missing book description",
+      "expectedCategory": "other",
+      "actualCategory": "other",
+      "requiredFlags": [
+        "missing_description",
+        "insufficient_information",
+        "ambiguous_category"
+      ],
+      "actualFlags": [
+        "missing_description",
+        "insufficient_information",
+        "ambiguous_category"
+      ],
+      "checks": {
+        "schemaValid": true,
+        "categoryMatch": true,
+        "requiredFlagsPresent": true,
+        "summaryValid": true
+      },
+      "passed": true,
+      "repaired": false,
+      "promptVersion": "enrich-v2",
+      "durationMs": 2517,
+      "output": {
+        "category": "other",
+        "summary": "An untitled manuscript with a price listed but no description or additional details provided.",
+        "quality_flags": [
+          "missing_description",
+          "insufficient_information",
+          "ambiguous_category"
+        ]
+      }
+    },
+    {
+      "id": "missing-price",
+      "scenario": "Missing price with clear book information",
+      "expectedCategory": "fiction",
+      "actualCategory": "fiction",
+      "requiredFlags": [
+        "missing_price"
+      ],
+      "actualFlags": [
+        "missing_price"
+      ],
+      "checks": {
+        "schemaValid": true,
+        "categoryMatch": true,
+        "requiredFlagsPresent": true,
+        "summaryValid": true
+      },
+      "passed": true,
+      "repaired": false,
+      "promptVersion": "enrich-v2",
+      "durationMs": 1803,
+      "output": {
+        "category": "fiction",
+        "summary": "A fantasy novel about a hobbit who joins a dangerous quest.",
+        "quality_flags": [
+          "missing_price"
+        ]
+      }
+    }
+  ]
+}

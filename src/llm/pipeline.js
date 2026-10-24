@@ -10,7 +10,9 @@ import { quarantineEnrichmentFailure } from "./quarantine.js";
 
 export class EnrichmentQuarantinedError extends Error {
   constructor() {
-    super("LLM output remained invalid after one repair attempt and was quarantined");
+    super(
+      "LLM output remained invalid after one repair attempt and was quarantined"
+    );
     this.name = "EnrichmentQuarantinedError";
     this.code = "LLM_OUTPUT_QUARANTINED";
   }
@@ -25,6 +27,38 @@ function describeFailure(error) {
   };
 }
 
+function enforceInputQualityFlags(data, book) {
+  const flags = new Set(data.quality_flags);
+  let category = data.category;
+
+  const descriptionMissing =
+    typeof book.description !== "string" || !book.description.trim();
+
+  const priceMissing = book.price_gbp === undefined;
+
+  // These flags are based on known input fields, not model guesses.
+  if (descriptionMissing) {
+    category = "other";
+    flags.add("missing_description");
+    flags.add("insufficient_information");
+    flags.add("ambiguous_category");
+  } else {
+    flags.delete("missing_description");
+  }
+
+  if (priceMissing) {
+    flags.add("missing_price");
+  } else {
+    flags.delete("missing_price");
+  }
+
+  return {
+    ...data,
+    category,
+    quality_flags: [...flags],
+  };
+}
+
 export async function enrichBook(
   book,
   {
@@ -36,8 +70,10 @@ export async function enrichBook(
   const firstResponse = await generate(book);
 
   try {
+    const data = parseAndValidateEnrichment(firstResponse.rawContent);
+
     return {
-      data: parseAndValidateEnrichment(firstResponse.rawContent),
+      data: enforceInputQualityFlags(data, book),
       promptVersion: firstResponse.promptVersion,
       repaired: false,
     };
@@ -68,8 +104,10 @@ export async function enrichBook(
     }
 
     try {
+      const data = parseAndValidateEnrichment(repairedResponse.rawContent);
+
       return {
-        data: parseAndValidateEnrichment(repairedResponse.rawContent),
+        data: enforceInputQualityFlags(data, book),
         promptVersion:
           repairedResponse.promptVersion ?? firstResponse.promptVersion,
         repaired: true,

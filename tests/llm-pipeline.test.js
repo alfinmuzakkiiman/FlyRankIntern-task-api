@@ -162,3 +162,45 @@ test("writes quarantine records as JSONL", async () => {
     await rm(tempDir, { recursive: true, force: true });
   }
 });
+
+test("enforces missing-price flag from input when model omits it", async () => {
+  const result = await enrichBook(
+    {
+      title: "The Hobbit",
+      description: "A fantasy novel about a hobbit on a quest."
+    },
+    {
+      generate: async () => ({
+        promptVersion: "enrich-v2",
+        rawContent: JSON.stringify({
+          category: "fiction",
+          summary: "A fantasy novel about a hobbit on a quest.",
+          quality_flags: [],
+        }),
+      }),
+    }
+  );
+
+  assert.ok(result.data.quality_flags.includes("missing_price"));
+});
+
+test("enforces missing-description flags from input", async () => {
+  const result = await enrichBook(
+    { title: "Untitled Manuscript Q17", price_gbp: 8.5 },
+    {
+      generate: async () => ({
+        promptVersion: "enrich-v2",
+        rawContent: JSON.stringify({
+          category: "fiction",
+          summary: "No description was supplied.",
+          quality_flags: [],
+        }),
+      }),
+    }
+  );
+
+  assert.equal(result.data.category, "other");
+  assert.ok(result.data.quality_flags.includes("missing_description"));
+  assert.ok(result.data.quality_flags.includes("insufficient_information"));
+  assert.ok(result.data.quality_flags.includes("ambiguous_category"));
+});

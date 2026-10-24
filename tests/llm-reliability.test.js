@@ -108,3 +108,8 @@ test("returns null when provider pricing is unknown", () => {
     null
   );
 });
+
+test("recognizes timeout messages as retryable", () => {
+  const error = new Error("Request timed out.");
+  assert.equal(isRetryableLLMError(error), true);
+});
