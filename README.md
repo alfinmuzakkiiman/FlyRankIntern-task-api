@@ -1886,3 +1886,18 @@ node --test tests/llm-pipeline.test.js
 
 The tests cover valid responses, malformed JSON, schema validation,
 single repair attempts, quarantine behavior, and JSONL file writing.
+
+## W7 A17 — LLM Reliability and Guardrails (Stage 4)
+
+- LLM requests have a configurable timeout through `LLM_TIMEOUT_MS`.
+- Transient network failures, rate limits, and server errors can be retried with exponential backoff.
+- `LLM_MAX_RETRIES` and `LLM_RETRY_BASE_DELAY_MS` control retry behavior.
+- Set `LLM_ENABLED=false` to disable real LLM calls. Stub mode remains available for local API contract tests.
+- Structured request logs include prompt version, latency, retry count, token usage when available, and estimated cost when pricing rates are configured.
+- Configure `LLM_INPUT_COST_PER_1K_USD` and `LLM_OUTPUT_COST_PER_1K_USD` for the provider's pricing. Estimated cost stays null when usage or pricing is unavailable.
+
+Run the reliability tests:
+
+```bash
+node --test tests/llm-reliability.test.js
+```
