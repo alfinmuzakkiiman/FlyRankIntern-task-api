@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:llm": "node --test tests/llm-pipeline.test.js tests/llm-reliability.test.js tests/stage5-evaluation.test.js",
+    "eval:llm": "node --env-file=.env scripts/evaluate-llm.js"
   },
   "keywords": [],
   "author": "",

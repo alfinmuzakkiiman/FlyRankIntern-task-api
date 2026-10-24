@@ -1901,3 +1901,70 @@ Run the reliability tests:
 ```bash
 node --test tests/llm-reliability.test.js
 ```
+
+## W7 A17 — Final Evaluation and Documentation (Stage 5)
+
+### Automated tests
+
+Run the pipeline, reliability, and evaluation-dataset tests:
+
+```bash
+npm run test:llm
+```
+
+### Live LLM evaluation
+
+Ensure Ollama is running and `.env` contains the LLM provider configuration. Run:
+
+```bash
+npm run eval:llm
+```
+
+The evaluation runner processes eight book records sequentially and checks:
+
+- Output validity against the Zod enrichment schema.
+- Category accuracy against each expected category.
+- Presence of required quality flags.
+- Non-empty summaries within the 300-character limit.
+
+A JSON report is written to `evals/results/stage5-report.json`.
+The report includes per-case results, repair status, duration, and an
+overall pass rate. The command exits unsuccessfully if one or more cases fail.
+
+### Running the API
+
+Stub mode for deterministic API contract testing:
+
+```bash
+LLM_STUB=1 npm start
+```
+
+Real LLM mode, with Ollama running and `.env` configured:
+
+```bash
+env -u LLM_STUB npm start
+```
+
+Set `LLM_ENABLED=false` to disable real LLM requests. Reliability
+settings and quarantine behavior are documented above.
+
+### Stage 5 evaluation results
+
+Recorded local evaluation run:
+
+- Model: `qwen3:8b` via local Ollama.
+- Prompt version: `enrich-v2`.
+- Evaluation cases: 8.
+- Passed: 8.
+- Failed: 0.
+- Pass rate: 100%.
+
+The run used `LLM_REASONING_EFFORT=none`, a 90-second request timeout, and one retry. These are results from a specific local run, not a guarantee that every model or provider will produce the same score.
+
+Re-run the evaluation with:
+
+```bash
+LLM_REASONING_EFFORT=none LLM_TIMEOUT_MS=90000 LLM_MAX_RETRIES=1 npm run eval:llm
+```
+
+The generated JSON report is saved at `evals/results/stage5-report.json`.

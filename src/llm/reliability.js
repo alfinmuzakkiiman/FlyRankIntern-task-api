@@ -69,7 +69,8 @@ export function isRetryableLLMError(error) {
     return true;
   }
 
-  return /timeout|connectionerror/i.test(String(error?.name ?? ""));
+  const description = `${String(error?.name ?? "")} ${String(error?.message ?? "")}`;
+return /timeout|timed out|connectionerror|network error|fetch failed/i.test(description);
 }
 
 const defaultSleep = (ms) =>

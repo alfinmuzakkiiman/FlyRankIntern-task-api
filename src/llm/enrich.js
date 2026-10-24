@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import {
   ENRICH_PROMPT_VERSION,
   buildEnrichMessages,
-} from "./prompts/enrich.v1.js";
+} from "./prompts/enrich.v2.js";
 import {
   estimateCostUsd,
   getLLMRuntimeConfig,
@@ -50,11 +50,21 @@ async function requestCompletion(messages) {
       () => {
         attempts += 1;
 
-        return client.chat.completions.create({
+        const requestOptions = {
           model,
           messages,
           temperature: 0,
-        });
+          max_tokens: 256,
+        };
+
+        // Optional provider-specific control. For supported Ollama Qwen3
+        // versions, "none" disables thinking for short JSON tasks.
+        const reasoningEffort = process.env.LLM_REASONING_EFFORT?.trim();
+        if (reasoningEffort) {
+          requestOptions.reasoning_effort = reasoningEffort;
+        }
+
+        return client.chat.completions.create(requestOptions);
       },
       {
         maxRetries: config.maxRetries,

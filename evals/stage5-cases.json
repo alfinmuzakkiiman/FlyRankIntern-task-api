@@ -1,0 +1,95 @@
+{
+  "version": "stage5-v1",
+  "cases": [
+    {
+      "id": "fiction-clear",
+      "scenario": "Clearly described fiction",
+      "input": {
+        "title": "The Hobbit",
+        "description": "A fantasy novel about a hobbit who joins a dangerous quest.",
+        "price_gbp": 12.5
+      },
+      "expectedCategory": "fiction",
+      "requiredFlags": []
+    },
+    {
+      "id": "non-fiction-clear",
+      "scenario": "Clearly described non-fiction",
+      "input": {
+        "title": "A Brief History of Time",
+        "description": "A popular science book explaining cosmology, black holes, and the history of the universe.",
+        "price_gbp": 14.0
+      },
+      "expectedCategory": "non_fiction",
+      "requiredFlags": []
+    },
+    {
+      "id": "children-clear",
+      "scenario": "Clearly described children's book",
+      "input": {
+        "title": "The Very Hungry Caterpillar",
+        "description": "A children's picture book for young readers about a caterpillar eating different foods before becoming a butterfly.",
+        "price_gbp": 7.5
+      },
+      "expectedCategory": "children",
+      "requiredFlags": []
+    },
+    {
+      "id": "poetry-clear",
+      "scenario": "Clearly described poetry",
+      "input": {
+        "title": "Selected Poems",
+        "description": "A collection of poetry exploring love, loss, seasons, and the natural world.",
+        "price_gbp": 9.0
+      },
+      "expectedCategory": "poetry",
+      "requiredFlags": []
+    },
+    {
+      "id": "reference-clear",
+      "scenario": "Clearly described reference book",
+      "input": {
+        "title": "Oxford Dictionary of English",
+        "description": "A reference dictionary providing definitions, spelling, pronunciation, and usage examples for English words.",
+        "price_gbp": 25.0
+      },
+      "expectedCategory": "reference",
+      "requiredFlags": []
+    },
+    {
+      "id": "mixed-format",
+      "scenario": "Ambiguous mixed-format publication",
+      "input": {
+        "title": "A Notebook of Many Things",
+        "description": "A deliberately mixed-format publication combining short fiction, poems, essays, recipes, and travel notes, with no single dominant form.",
+        "price_gbp": 10.0
+      },
+      "expectedCategory": "other",
+      "requiredFlags": ["ambiguous_category"]
+    },
+    {
+      "id": "missing-description",
+      "scenario": "Missing book description",
+      "input": {
+        "title": "Untitled Manuscript Q17",
+        "price_gbp": 8.5
+      },
+      "expectedCategory": "other",
+      "requiredFlags": [
+        "missing_description",
+        "insufficient_information",
+        "ambiguous_category"
+      ]
+    },
+    {
+      "id": "missing-price",
+      "scenario": "Missing price with clear book information",
+      "input": {
+        "title": "The Hobbit",
+        "description": "A fantasy novel about a hobbit who joins a dangerous quest."
+      },
+      "expectedCategory": "fiction",
+      "requiredFlags": ["missing_price"]
+    }
+  ]
+}
